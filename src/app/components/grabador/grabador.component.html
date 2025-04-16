@@ -1,0 +1,33 @@
+<div class="container mt-4">
+  <h2>Grabador de audio</h2>
+
+  <div class="mb-3">
+    <button class="btn btn-primary me-2" (click)="startRecording()" [disabled]="isRecording">Grabar</button>
+    <button class="btn btn-danger me-2" (click)="stopRecording()" [disabled]="!isRecording">Detener</button>
+    <button class="btn btn-success" (click)="enviarAudio()" [disabled]="!audioBlob">Enviar</button>
+  </div>
+
+  <div class="mb-3">
+    <label for="fileUpload" class="form-label">O subir una nota de audio ya grabada:</label>
+    <input
+      type="file"
+      id="fileUpload"
+      class="form-control"
+      accept="audio/webm, audio/mp3, audio/mpeg, audio/mp4, audio/x-m4a, audio/m4a, audio/wav"
+      (change)="onFileSelected($event)"
+    />
+  </div>
+
+  <audio *ngIf="audioURL" controls [src]="audioURL"></audio>
+
+  <div *ngIf="resumen.length > 0" class="mt-4">
+    <h4>Resumen del audio:</h4>
+    <ul>
+      <li *ngFor="let punto of resumen">{{ punto }}</li>
+    </ul>
+  </div>
+</div>
+
+
+
+  
