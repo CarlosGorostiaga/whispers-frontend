@@ -13,7 +13,7 @@
       type="file"
       id="fileUpload"
       class="form-control"
-      accept="audio/webm, audio/mp3, audio/mpeg, audio/mp4, audio/x-m4a, audio/m4a, audio/wav"
+      accept="audio/webm, audio/mp3, audio/mpeg, audio/mp4, audio/x-m4a, audio/m4a, audio/wav, audio/3gpp"
       (change)="onFileSelected($event)"
     />
   </div>
@@ -22,6 +22,11 @@
   <div *ngIf="fileInfo">
     <p><strong>Archivo recibido:</strong></p>
     <pre>{{ fileInfo | json }}</pre>
+  </div>
+
+  <!-- Alerta de error -->
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
   </div>
 
   <!-- Reproductor de audio -->
@@ -40,6 +45,7 @@
     </ul>
   </div>
 </div>
+
 
 
 

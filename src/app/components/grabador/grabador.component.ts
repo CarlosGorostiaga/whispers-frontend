@@ -14,6 +14,7 @@ export class GrabadorComponent {
   resumen: string[] = [];
   isLoading: boolean = false; // para el loader
   fileInfo: any = null;       // para mostrar datos del archivo
+  errorMessage: string | null = null;  // <-- nuevo
 
   constructor(private audioService: AudioService) {}
 
@@ -75,13 +76,20 @@ export class GrabadorComponent {
   enviarAudio() {
     if (this.audioBlob) {
       this.isLoading = true;
+      this.errorMessage = null;                    // limpia errores previos
+      this.resumen = [];                           // limpia resumen previo
+
       this.audioService.subirAudio(this.audioBlob).subscribe(
         res => {
           this.resumen = res.resumen;
           this.isLoading = false;
         },
-        error => {
-          console.error(error);
+        err => {
+          console.error(err);
+          // Si el backend envía { error: 'mensaje...' }, lo usamos;
+          // si no, caemos a un mensaje genérico.
+          this.errorMessage = err.error?.error 
+            || 'Ha ocurrido un error procesando el audio.';
           this.isLoading = false;
         }
       );
