@@ -18,8 +18,21 @@
     />
   </div>
 
+  <!-- Mostrar datos del archivo recibido -->
+  <div *ngIf="fileInfo">
+    <p><strong>Archivo recibido:</strong></p>
+    <pre>{{ fileInfo | json }}</pre>
+  </div>
+
+  <!-- Reproductor de audio -->
   <audio *ngIf="audioURL" controls [src]="audioURL"></audio>
 
+  <!-- Loader: Se muestra mientras se espera la respuesta del backend -->
+  <div *ngIf="isLoading" class="mt-3">
+    <p>Cargando, por favor espera...</p>
+  </div>
+
+  <!-- Sección para mostrar el resumen -->
   <div *ngIf="resumen.length > 0" class="mt-4">
     <h4>Resumen del audio:</h4>
     <ul>
@@ -27,6 +40,7 @@
     </ul>
   </div>
 </div>
+
 
 
 

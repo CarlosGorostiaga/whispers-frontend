@@ -12,14 +12,17 @@ export class GrabadorComponent {
   audioURL: string | null = null;
   isRecording = false;
   resumen: string[] = [];
+  isLoading: boolean = false; // para el loader
+  fileInfo: any = null;       // para mostrar datos del archivo
 
   constructor(private audioService: AudioService) {}
 
-  startRecording() { // Inicia la grabacion de audio
+  // Función para grabar audio en tiempo real
+  startRecording() {
     this.isRecording = true;
     this.resumen = [];
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      this.mediaRecorder = new MediaRecorder(stream);
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
       this.mediaRecorder.start();
 
       this.audioChunks = [];
@@ -31,32 +34,58 @@ export class GrabadorComponent {
       this.mediaRecorder.addEventListener("stop", () => {
         this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         this.audioURL = URL.createObjectURL(this.audioBlob);
+        // Al grabar en el momento, simulamos algunos datos para mostrar
+        this.fileInfo = {
+          originalName: 'grabacion.webm',
+          mimeType: this.audioBlob.type,
+          filename: 'grabacion.webm',
+          size: this.audioBlob.size
+        };
       });
     });
   }
 
-  stopRecording() { // para la grabacion de audio
+  // Detiene la grabación
+  stopRecording() {
     this.isRecording = false;
     this.mediaRecorder.stop();
   }
 
-  onFileSelected(event: any) { // Selecciona el archivo directamente del almacenamiento local del movil 
+  // Selecciona un archivo de audio ya grabado desde el dispositivo
+  onFileSelected(event: any) {
     const file: File = event.target.files[0];
 
     if (file && file.type.startsWith('audio/')) {
       this.audioBlob = file;
       this.audioURL = URL.createObjectURL(file);
       this.resumen = [];
+      // Guarda los detalles del archivo para mostrarlos en el HTML
+      this.fileInfo = {
+        originalName: file.name,
+        mimeType: file.type,
+        filename: file.name,
+        size: file.size
+      };
     } else {
       alert("Por favor selecciona un archivo de audio válido.");
     }
   }
 
-  enviarAudio() { // Lo envia diractemte al Bakend 
+  // Envía el audio al backend y muestra un loader hasta recibir la respuesta
+  enviarAudio() {
     if (this.audioBlob) {
-      this.audioService.subirAudio(this.audioBlob).subscribe(res => {
-        this.resumen = res.resumen;
-      });
+      this.isLoading = true;
+      this.audioService.subirAudio(this.audioBlob).subscribe(
+        res => {
+          this.resumen = res.resumen;
+          this.isLoading = false;
+        },
+        error => {
+          console.error(error);
+          this.isLoading = false;
+        }
+      );
     }
   }
 }
+
