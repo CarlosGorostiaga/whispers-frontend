@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class AudioService {
-  private apiUrl = 'http://localhost:3000/api/audio';
+  // private apiUrl = 'http://localhost:3000/api/audio';
+  private apiUrl = 'http://whispers-backend-production.up.railway.app'
 
   constructor(private http: HttpClient) {}
 
