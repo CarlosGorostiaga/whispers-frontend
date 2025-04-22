@@ -1,6 +1,4 @@
-
-
-import { Component } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 import { AudioService } from 'src/app/servicios/audio.service';
 
 @Component({
@@ -18,7 +16,7 @@ export class GrabadorComponent {
   fileInfo: any = null;
   errorMessage: string | null = null;
 
-  constructor(private audioService: AudioService) {}
+  constructor(private audioService: AudioService, private ngZone: NgZone) {}
 
   startRecording() {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -49,14 +47,20 @@ export class GrabadorComponent {
 
         this.mediaRecorder.onstop = () => {
           console.log('Grabación detenida, montando Blob...');
-          this.audioBlob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType });
-          this.audioURL = URL.createObjectURL(this.audioBlob);
-          this.fileInfo = {
-            originalName: 'grabacion.webm',
-            mimeType: this.audioBlob.type,
-            filename: 'grabacion.webm',
-            size: this.audioBlob.size
-          };
+          const blob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType });
+          const url  = URL.createObjectURL(blob);
+        
+          // Rodeamos en ngZone para que Angular detecte los cambios
+          this.ngZone.run(() => {
+            this.audioBlob = blob;
+            this.audioURL  = url;
+            this.fileInfo = {
+              originalName: 'grabacion.webm',
+              mimeType: blob.type,
+              filename: 'grabacion.webm',
+              size: blob.size
+            };
+          });
         };
 
         this.mediaRecorder.onerror = (err) => {
