@@ -22,14 +22,12 @@
 
   <!-- Opción alternativa: subir un archivo existente -->
   <div class="mb-3">
-    <label for="fileUpload" class="form-label">
-      O subir una nota de audio ya grabada:
-    </label>
+    <label for="fileUpload" class="form-label">O subir una nota de audio ya grabada:</label>
     <input
       type="file"
       id="fileUpload"
       class="form-control"
-      accept="audio/*"
+      accept="audio/webm, audio/mp3, audio/mpeg, audio/mp4, audio/x-m4a, audio/m4a, audio/wav, audio/3gpp"
       (change)="onFileSelected($event)"
     />
   </div>
