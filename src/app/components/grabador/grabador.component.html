@@ -2,42 +2,29 @@
   <h2>Grabador de audio</h2>
 
   <div class="mb-3">
-    <button class="btn btn-primary me-2" (click)="startRecording()" [disabled]="isRecording">Grabar</button>
-    <button class="btn btn-danger me-2" (click)="stopRecording()" [disabled]="!isRecording">Detener</button>
-    <button class="btn btn-success" (click)="enviarAudio()" [disabled]="!audioBlob">Enviar</button>
+    <button class="btn btn-primary me-2" (click)="startRecording()"
+            [disabled]="isRecording">Grabar</button>
+    <button class="btn btn-danger me-2" (click)="stopRecording()"
+            [disabled]="!isRecording">Detener</button>
+    <button class="btn btn-success" (click)="enviarAudio()"
+            [disabled]="!audioBlob || isRecording">Enviar</button>
   </div>
 
-  <div class="mb-3">
-    <label for="fileUpload" class="form-label">O subir una nota de audio ya grabada:</label>
-    <input
-      type="file"
-      id="fileUpload"
-      class="form-control"
-      accept="audio/webm, audio/mp3, audio/mpeg, audio/mp4, audio/x-m4a, audio/m4a, audio/wav, audio/3gpp"
-      (change)="onFileSelected($event)"
-    />
-  </div>
-
-  <!-- Mostrar datos del archivo recibido -->
-  <div *ngIf="fileInfo">
+  <div *ngIf="fileInfo" class="mb-3">
     <p><strong>Archivo recibido:</strong></p>
     <pre>{{ fileInfo | json }}</pre>
   </div>
 
-  <!-- Alerta de error -->
   <div *ngIf="errorMessage" class="alert alert-danger mt-3">
     {{ errorMessage }}
   </div>
 
-  <!-- Reproductor de audio -->
   <audio *ngIf="audioURL" controls [src]="audioURL"></audio>
 
-  <!-- Loader: Se muestra mientras se espera la respuesta del backend -->
   <div *ngIf="isLoading" class="mt-3">
     <p>Cargando, por favor espera...</p>
   </div>
 
-  <!-- Sección para mostrar el resumen -->
   <div *ngIf="resumen.length > 0" class="mt-4">
     <h4>Resumen del audio:</h4>
     <ul>
@@ -45,6 +32,7 @@
     </ul>
   </div>
 </div>
+
 
 
 

@@ -1,3 +1,5 @@
+
+
 import { Component } from '@angular/core';
 import { AudioService } from 'src/app/servicios/audio.service';
 
@@ -7,60 +9,85 @@ import { AudioService } from 'src/app/servicios/audio.service';
 })
 export class GrabadorComponent {
   mediaRecorder!: MediaRecorder;
-  audioChunks: any[] = [];
+  audioChunks: BlobPart[] = [];
   audioBlob: Blob | null = null;
   audioURL: string | null = null;
   isRecording = false;
   resumen: string[] = [];
-  isLoading: boolean = false; // para el loader
-  fileInfo: any = null;       // para mostrar datos del archivo
-  errorMessage: string | null = null;  // <-- nuevo
+  isLoading = false;
+  fileInfo: any = null;
+  errorMessage: string | null = null;
 
   constructor(private audioService: AudioService) {}
 
-  // Función para grabar audio en tiempo real
   startRecording() {
-    this.isRecording = true;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.errorMessage = 'Este navegador no soporta grabación de audio.';
+      return;
+    }
+    this.errorMessage = null;
     this.resumen = [];
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-      this.mediaRecorder.start();
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        // Elegimos el mimeType soportado
+        let options: MediaRecorderOptions = {};
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          options.mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          options.mimeType = 'audio/webm';
+        } else {
+          console.warn('No se soporta webm en este navegador, usando default.');
+        }
 
-      this.audioChunks = [];
+        this.mediaRecorder = new MediaRecorder(stream, options);
+        this.audioChunks = [];
 
-      this.mediaRecorder.addEventListener("dataavailable", event => {
-        this.audioChunks.push(event.data);
-      });
-
-      this.mediaRecorder.addEventListener("stop", () => {
-        this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        this.audioURL = URL.createObjectURL(this.audioBlob);
-        // Al grabar en el momento, simulamos algunos datos para mostrar
-        this.fileInfo = {
-          originalName: 'grabacion.webm',
-          mimeType: this.audioBlob.type,
-          filename: 'grabacion.webm',
-          size: this.audioBlob.size
+        this.mediaRecorder.ondataavailable = (event) => {
+          console.log('Chunk disponible', event.data);
+          this.audioChunks.push(event.data);
         };
+
+        this.mediaRecorder.onstop = () => {
+          console.log('Grabación detenida, montando Blob...');
+          this.audioBlob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType });
+          this.audioURL = URL.createObjectURL(this.audioBlob);
+          this.fileInfo = {
+            originalName: 'grabacion.webm',
+            mimeType: this.audioBlob.type,
+            filename: 'grabacion.webm',
+            size: this.audioBlob.size
+          };
+        };
+
+        this.mediaRecorder.onerror = (err) => {
+          console.error('Error en MediaRecorder:', err);
+          this.errorMessage = 'Error grabando audio.';
+        };
+
+        this.mediaRecorder.start();
+        this.isRecording = true;
+        console.log('MediaRecorder iniciado con opciones', options);
+      })
+      .catch(err => {
+        console.error('getUserMedia fallo:', err);
+        this.errorMessage = 'No se pudo acceder al micrófono.';
       });
-    });
   }
 
-  // Detiene la grabación
   stopRecording() {
-    this.isRecording = false;
-    this.mediaRecorder.stop();
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+      console.log('Invocado stopRecording()');
+    }
   }
 
-  // Selecciona un archivo de audio ya grabado desde el dispositivo
   onFileSelected(event: any) {
     const file: File = event.target.files[0];
-
     if (file && file.type.startsWith('audio/')) {
       this.audioBlob = file;
       this.audioURL = URL.createObjectURL(file);
       this.resumen = [];
-      // Guarda los detalles del archivo para mostrarlos en el HTML
       this.fileInfo = {
         originalName: file.name,
         mimeType: file.type,
@@ -68,32 +95,28 @@ export class GrabadorComponent {
         size: file.size
       };
     } else {
-      alert("Por favor selecciona un archivo de audio válido.");
+      alert('Por favor selecciona un archivo de audio válido.');
     }
   }
 
-  // Envía el audio al backend y muestra un loader hasta recibir la respuesta
   enviarAudio() {
-    if (this.audioBlob) {
-      this.isLoading = true;
-      this.errorMessage = null;                    // limpia errores previos
-      this.resumen = [];                           // limpia resumen previo
+    if (!this.audioBlob) return;
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.resumen = [];
 
-      this.audioService.subirAudio(this.audioBlob).subscribe(
-        res => {
-          this.resumen = res.resumen;
-          this.isLoading = false;
-        },
-        err => {
-          console.error(err);
-          // Si el backend envía { error: 'mensaje...' }, lo usamos;
-          // si no, caemos a un mensaje genérico.
-          this.errorMessage = err.error?.error 
-            || 'Ha ocurrido un error procesando el audio.';
-          this.isLoading = false;
-        }
-      );
-    }
+    console.log('Enviando audio:', this.fileInfo);
+    this.audioService.subirAudio(this.audioBlob).subscribe(
+      res => {
+        console.log('Respuesta backend:', res);
+        this.resumen = res.resumen;
+        this.isLoading = false;
+      },
+      err => {
+        console.error('Error backend:', err);
+        this.errorMessage = err.error?.error || 'Error interno del servidor';
+        this.isLoading = false;
+      }
+    );
   }
 }
-
